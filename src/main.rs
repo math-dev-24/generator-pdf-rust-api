@@ -19,6 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let content_html = extract::get_html_content(&generate_url).await?;
 
+
     let variables: Vec<Segment> = get_segments(&content_html);
 
     let mut values: HashMap<String, String> = HashMap::new();
