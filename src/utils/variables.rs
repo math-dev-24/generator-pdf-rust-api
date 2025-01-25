@@ -10,11 +10,11 @@ pub fn get_segments(html_doc: &str) -> Vec<Segment> {
         if let Some(s) = cap.get(0) {
             let raw_key = cap.get(2).unwrap().as_str().trim().to_string();
             let prefix = cap.get(1).unwrap().as_str();
-            let var = raw_key.split_whitespace().next().unwrap().to_string();
+            let variable = raw_key.split_whitespace().next().unwrap().to_string();
 
             if prefix.is_empty() {
                 let tmp_var = Segment {
-                    start: s.start(), end: s.end(), key: var,
+                    start: s.start(), end: s.end(), key: variable,
                     kind: SegmentKind::Variable, children: Vec::new(), len_in: 0, len_out: 0,
                 };
                 create_sub_segment_or_add(&mut segments, tmp_var);
@@ -76,7 +76,6 @@ fn update_children(segment: &mut Segment, s: Match) -> bool {
     for child in &mut segment.children {
         match child.kind {
             SegmentKind::Condition if child.end == 0 => {
-                // Mise à jour de l'enfant
                 child.end = s.end();
                 child.len_out = s.end() - s.start();
                 child_updated = true;
