@@ -1,5 +1,5 @@
 use serde_json::Value;
-use crate::types::variable::{Segment, SegmentKind};
+use crate::types::segment::{Segment, SegmentKind};
 use crate::utils::variables::get_segments;
 
 pub fn replace_variable(

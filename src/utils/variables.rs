@@ -1,5 +1,5 @@
 use regex::{Match, Regex};
-use crate::types::variable::{Segment, SegmentKind};
+use crate::types::segment::{Segment, SegmentKind};
 
 
 pub fn get_segments(html_doc: &str) -> Vec<Segment> {
