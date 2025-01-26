@@ -7,12 +7,9 @@ use utils::extract;
 use utils::replace::replace_variable;
 use utils::variables::get_segments;
 use crate::types::variable::Segment;
-use crate::utils::file::save_to_file;
-
+use crate::utils::file::{save_to_file};
 
 use std::error::Error;
-use std::fs::File;
-use std::io::Write;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -45,12 +42,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // println!("{:#?}", variables);
     // println!("{:#?}", parsed_json);
-
     println!("{}", content_html);
 
     replace_variable(&mut content_html, variables, &parsed_json);
 
-    save_to_file("test.html", &content_html)?;
+    let path_html = "test.html";
+
+
+    save_to_file(path_html, &content_html).expect("Error lors de la génération du html");
     Ok(())
 }
 
