@@ -34,9 +34,7 @@ pub fn get_segments(html_doc: &str) -> Vec<Segment> {
                         children: Vec::new(), len_in: s.end() - s.start(), len_out: 0
                     };
                     create_sub_segment_or_add(&mut segments, tmp_segment);
-
                 } else if raw_key.starts_with("endif") || raw_key.starts_with("endloop") {
-
                     let kind: SegmentKind = if raw_key.starts_with("endif") {
                         SegmentKind::Condition
                     }else {
@@ -59,29 +57,28 @@ fn create_sub_segment_or_add(segments: &mut Vec<Segment>, segment: Segment) {
     }
 }
 
-fn end_sub(segments: &mut Vec<Segment>, s: Match, kind: SegmentKind) {
-    if let Some(index) = segments.iter().position(|seg| seg.end == 0 && seg.kind == kind) {
+fn end_sub(segments: &mut Vec<Segment>, s: Match, kind_research: SegmentKind) {
+    if let Some(index) = segments.iter().position(|seg| seg.end == 0) {
         let segment = &mut segments[index];
-
-        if !update_children(segment, s) {
+        if !update_children(segment, s, &kind_research) {
             segment.end = s.end();
             segment.len_out = s.end() - s.start();
         }
     }
 }
 
-fn update_children(segment: &mut Segment, s: Match) -> bool {
+fn update_children(segment: &mut Segment, s: Match, kind_research: &SegmentKind) -> bool {
     let mut child_updated = false;
 
     for child in &mut segment.children {
         match child.kind {
-            SegmentKind::Condition if child.end == 0 => {
+            SegmentKind::Condition | SegmentKind::Loop if child.end == 0 && child.kind == *kind_research => {
                 child.end = s.end();
                 child.len_out = s.end() - s.start();
                 child_updated = true;
             }
             _ => {
-                child_updated |= update_children(child, s);
+                child_updated |= update_children(child, s, kind_research);
             }
         }
     }

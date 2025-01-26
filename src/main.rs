@@ -1,12 +1,13 @@
 mod utils;
 mod types;
 
-use std::collections::HashMap;
+use serde_json::{Value, from_str};
 
 use utils::extract;
 use utils::replace::replace_variable;
 use utils::variables::get_segments;
 use crate::types::variable::Segment;
+
 
 use std::error::Error;
 use std::fs::File;
@@ -22,16 +23,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let variables: Vec<Segment> = get_segments(&content_html);
 
-    let mut values: HashMap<String, String> = HashMap::new();
-    values.insert("name".to_string(), "mathieu".to_string());
-    values.insert("username".to_string(), "john".to_string());
-    values.insert("now".to_string(), "2024-04-23".to_string());
-    values.insert("deadline".to_string(), "2024-04-28".to_string());
-    values.insert("ask".to_string(), "true".to_string());
-    values.insert("content".to_string(), "Les modalités sont  ....".to_string());
+
+    let json = r#"{
+        "name": "mathieu",
+        "username": "Doriane",
+        "now": "2024-04-23",
+        "ask": "true",
+        "deadline": "2024-04-28",
+        "content": "Les modalités sont  ....",
+        "list" : [
+            { "name": "John" }, {"name": "Alicia"} , {"name": "Bernard"}
+        ]
+    }"#;
+
+
+    let parsed_json: Value = from_str(json).expect("Erreur lors de la désérialisation");
 
     println!("{:#?}", variables);
-    let new_html = replace_variable(content_html, variables, values);
+    println!("{:#?}", parsed_json);
+    let new_html = replace_variable(content_html, variables, &parsed_json);
 
 
     save_to_file("test.html", &new_html)?;

@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use crate::types::variable::{Segment, SegmentKind};
-
+use crate::utils::variables::get_segments;
 
 pub fn replace_variable(
-    html_content: String, segments: Vec<Segment>, values: HashMap<String, String>
+    html_content: String, segments: Vec<Segment>, values: &Value
 ) -> String {
 
     let mut content = html_content;
@@ -15,11 +16,8 @@ pub fn replace_variable(
             SegmentKind::Variable => {
                 update_variable_html(&mut content, &segment, &values);
             }
-            SegmentKind::Condition => {
+            SegmentKind::Condition | SegmentKind::Loop => {
                 parse_segment_kind(&mut content, &segment, &values);
-            }
-            SegmentKind::Loop => {
-                println!("TODO !")
             }
         }
     }
@@ -29,14 +27,14 @@ pub fn replace_variable(
 fn update_variable_html(
     content_html: &mut String,
     segment: &Segment,
-    values: &HashMap<String, String>
+    values: &Value
 ) {
     if let Some(value) = values.get(&segment.key) {
-        content_html.replace_range(segment.start..segment.end, value);
+        content_html.replace_range(segment.start..segment.end, value.as_str().unwrap());
     }
 }
 
-fn parse_segment_kind(content: &mut String, segment: &Segment, values: &HashMap<String, String>) {
+fn parse_segment_kind(content: &mut String, segment: &Segment, values: &Value) {
 
     if segment.kind == SegmentKind::Condition {
         if let Some(condition_value) = values.get(&segment.key) {
@@ -45,6 +43,8 @@ fn parse_segment_kind(content: &mut String, segment: &Segment, values: &HashMap<
                 return;
             }
         }
+    } else if segment.kind == SegmentKind::Loop {
+        generate_loop_content(content, segment, values);
     }
 
     content.replace_range(segment.end - segment.len_out..segment.end, "");
@@ -58,7 +58,7 @@ fn parse_segment_kind(content: &mut String, segment: &Segment, values: &HashMap<
                 parse_segment_kind(content, &child, &values);
             }
             SegmentKind::Loop => {
-                println!("TODO !!!");
+                generate_loop_content(content, &child, &values);
             }
         }
     }
@@ -69,29 +69,28 @@ fn parse_segment_kind(content: &mut String, segment: &Segment, values: &HashMap<
 
 
 fn generate_loop_content(
-    children: &[Segment],
-    loop_values: &str,
-    values: &HashMap<String, String>,
-) -> String {
-    let mut result = String::new();
-    let items: Vec<&str> = loop_values.split(',').collect();
+    content: &mut String,
+    child: &Segment,
+    values: &Value,
+) {
 
-    for item in items {
-        let mut temp_values = values.clone(); // Créer une copie locale des valeurs
-        temp_values.insert("item".to_string(), item.to_string());
+    if let Some(list_child) = values.get(&child.key) {
+        // contenu actuel avec variable
+        let mut content_loop = content[child.start + child.len_in..child.end - child.len_out].to_string();
+        // delete balise de fin
+        content.replace_range(child.end - child.len_out..child.end, "");
+        // récupérer les variables disponibles
+        let variables = get_segments(&content_loop);
 
-        for child in children {
-            if child.kind == SegmentKind::Variable {
-                let mut temp_content = String::new();
-                update_variable_html(&mut temp_content, child, &temp_values);
-                result.push_str(&temp_content);
-            } else {
-                let mut temp_content = String::new();
-                parse_segment_kind(&mut temp_content, child, &temp_values);
-                result.push_str(&temp_content);
-            }
+        let mut new_content: Vec<String> = Vec::new();
+
+
+        for item in list_child.as_array().unwrap() {
+            new_content.push(replace_variable(content_loop.to_string(), variables.clone(), item));
         }
-    }
 
-    result
+        // suppresion du début et remplacement
+        content.replace_range(child.start..child.end - child.len_out, &new_content.join("\n"));
+
+    }
 }
