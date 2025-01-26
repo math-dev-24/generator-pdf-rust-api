@@ -2,12 +2,10 @@ mod utils;
 mod types;
 
 use serde_json::{Value, from_str};
-
 use utils::replace::replace_variable;
 use utils::variables::get_segments;
 use crate::types::segment::Segment;
 use crate::utils::file::{save_to_file, format_url, get_html_content};
-
 use std::error::Error;
 
 #[tokio::main]
