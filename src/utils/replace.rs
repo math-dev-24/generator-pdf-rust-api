@@ -3,21 +3,26 @@ use crate::types::segment::{Segment, SegmentKind};
 use crate::utils::variables::get_segments;
 
 pub fn replace_variable(
-    html_content: &mut String, segments: Vec<Segment>, values: &Value
-){
+    html_content: String,
+    segments: Vec<Segment>,
+    values: &Value
+) -> String {
+    let mut html_content = html_content;
     let mut sorted_segments = segments;
+
     sorted_segments.sort_by(|a, b| b.start.cmp(&a.start));
 
     for segment in sorted_segments {
         match segment.kind {
             SegmentKind::Variable => {
-                update_variable_html(html_content, &segment, &values);
+                update_variable_html(&mut html_content, &segment, &values);
             }
             SegmentKind::Condition | SegmentKind::Loop => {
-                parse_segment_kind(html_content, &segment, &values);
+                parse_segment_kind(&mut html_content, &segment, &values);
             }
         }
     }
+    html_content
 }
 
 fn update_variable_html( content_html: &mut String, segment: &Segment, values: &Value) {
@@ -26,7 +31,11 @@ fn update_variable_html( content_html: &mut String, segment: &Segment, values: &
     }
 }
 
-fn parse_segment_kind(content: &mut String, segment: &Segment, values: &Value) {
+fn parse_segment_kind(
+    content: &mut String,
+    segment: &Segment,
+    values: &Value
+) {
     match segment.kind {
         SegmentKind::Condition => {
             if let Some(condition_value) = values.get(&segment.key) {
@@ -73,6 +82,9 @@ fn generate_loop_content(
     if let Some(list_child) = values.get(&child.key) {
 
         let content_loop = child.get_content_loop(content).unwrap();
+
+        println!("DEBUG - LOOP - {}", content_loop);
+
         let range_out = child.get_range_tag("out").unwrap();
         content.replace_range(range_out, "");
 
@@ -81,8 +93,7 @@ fn generate_loop_content(
         let mut new_content: Vec<String> = Vec::new();
 
         for item in list_child.as_array().unwrap() {
-            let mut tmp_content = content_loop.clone();
-            replace_variable(&mut tmp_content, variables.clone(), item);
+            let tmp_content = replace_variable(content_loop.clone(), variables.clone(), item);
             new_content.push(tmp_content);
         }
 

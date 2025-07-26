@@ -37,6 +37,7 @@ impl Segment {
             None
         }
     }
+
     pub fn get_content_loop(&self, content: &String) -> Option<String> {
         if let Some(range) = self.get_range_content() {
             return Some(content[range].to_string());

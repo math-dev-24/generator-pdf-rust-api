@@ -1,11 +1,10 @@
 mod utils;
 mod types;
 
-use serde_json::{Value, from_str};
+use serde_json::from_str;
 use utils::replace::replace_variable;
 use utils::variables::get_segments;
 use crate::types::format::FormatFile;
-use crate::types::segment::Segment;
 use crate::utils::file::{save_to_file, format_url, get_html_content};
 use std::error::Error;
 
@@ -15,9 +14,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let generate_url = format_url(base_url, FormatFile::HTML);
 
-    let mut content_html = get_html_content(&generate_url).await?;
+    let content_html = get_html_content(generate_url).await?;
 
-    let variables: Vec<Segment> = get_segments(&content_html);
+    let variables = get_segments(&content_html);
 
     let json = r#"{
         "name": "mathieu",
@@ -35,14 +34,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }"#;
 
 
-    let parsed_json: Value = from_str(json).expect("Erreur lors de la désérialisation");
+    let parsed_json = from_str(json).expect("Erreur lors de la désérialisation");
 
-    replace_variable(&mut content_html, variables, &parsed_json);
+    let new_content = replace_variable(content_html, variables, &parsed_json);
 
     let path_html = "test.html";
 
-    if let Ok(()) =  save_to_file(path_html, &content_html) {
+    if let Ok(()) =  save_to_file(path_html, new_content) {
         println!("Document générer : {}", path_html);
+    } else {
+        println!("Erreur lors de la sauvegarde du document");
     }
     Ok(())
 }
